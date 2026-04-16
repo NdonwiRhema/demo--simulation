@@ -1,9 +1,9 @@
 import { CategorySettings, ChartDataPoint } from '../types';
 
 /**
- * Procedurally generates data for an entire day, or precisely one hour if targetHour is specified.
+ * Procedurally generates data for an entire day
  */
-export function generateSimulationData(settings: CategorySettings, date: Date = new Date(), targetHour?: number): ChartDataPoint[] {
+export function generateSimulationData(settings: CategorySettings, date: Date = new Date()): ChartDataPoint[] {
   // Determine hours (0-23) based on Daylight (9-16, i.e., 8 hours starting 9 to 17) or 24H
   const startHour = settings.dayHours === 'Daylight' ? 9 : 0;
   const endHour = settings.dayHours === 'Daylight' ? 17 : 24;
@@ -22,25 +22,7 @@ export function generateSimulationData(settings: CategorySettings, date: Date = 
 
   const data: ChartDataPoint[] = [];
 
-  // Determine the bounding hours to generate
-  const loopStart = targetHour !== undefined ? Math.max(startHour, targetHour) : startHour;
-  const loopEnd = targetHour !== undefined ? Math.min(endHour, targetHour + 1) : endHour;
-
-  // Fast-forward currentPrice and currentVolume if starting from a later hour
-  if (targetHour !== undefined && targetHour > startHour) {
-    for (let h = startHour; h < targetHour; h++) {
-       const targetVolumePerHour = settings.volumeVariation === 'Hourly' && settings.hourlyVolumePattern?.[h] !== undefined
-           ? settings.hourlyVolumePattern[h]
-           : settings.rateOfDepletion;
-       currentVolume += targetVolumePerHour;
-       
-       if (settings.priceVariation === 'Continuous') {
-           currentPrice += priceStep * 3600;
-       }
-    }
-  }
-
-  for (let h = loopStart; h < loopEnd; h++) {
+  for (let h = startHour; h < endHour; h++) {
     // Target volume and price for this hour
     const targetVolumePerHour = settings.volumeVariation === 'Hourly' && settings.hourlyVolumePattern?.[h] !== undefined
       ? settings.hourlyVolumePattern[h]
@@ -52,7 +34,6 @@ export function generateSimulationData(settings: CategorySettings, date: Date = 
 
     // Distribution arrays
     let volumeDeltas = new Array(3600).fill(targetVolumePerHour / 3600);
-    let priceDeltas = new Array(3600).fill((targetPricePerHour - currentPrice) / 3600);
 
     if (settings.variationPattern) {
       // Smoothed Normalized Random Distribution over 3600 points
@@ -99,7 +80,7 @@ export function generateSimulationData(settings: CategorySettings, date: Date = 
         finalPriceForSecond = currentPrice;
       }
       
-      const isProg = finalPriceForSecond > prevPrice;
+      const isProg = finalPriceForSecond >= prevPrice;
       const isReg = finalPriceForSecond < prevPrice;
 
       data.push({
@@ -114,48 +95,4 @@ export function generateSimulationData(settings: CategorySettings, date: Date = 
   }
 
   return data;
-}
-
-/**
- * Generates an ultra-lightweight Daily Summary vector holding max 24 elements for the 'Hours' tab.
- */
-export function generateDailyMacroData(settings: CategorySettings, date: Date = new Date()): ChartDataPoint[] {
-  const startHour = settings.dayHours === 'Daylight' ? 9 : 0;
-  const endHour = settings.dayHours === 'Daylight' ? 17 : 24;
-
-  const totalHours = endHour - startHour;
-  const priceStep = settings.priceVariation === 'Continuous' && settings.endingPricePerDay && settings.startingPricePerDay
-    ? (settings.endingPricePerDay - settings.startingPricePerDay) / totalHours
-    : 0;
-
-  const startingPrice = settings.priceVariation === 'Continuous' && settings.startingPricePerDay ? settings.startingPricePerDay : 0;
-  
-  const macroData: ChartDataPoint[] = [];
-
-  for (let h = startHour; h < endHour; h++) {
-    const targetVolumePerHour = settings.volumeVariation === 'Hourly' && settings.hourlyVolumePattern?.[h] !== undefined
-      ? settings.hourlyVolumePattern[h]
-      : settings.rateOfDepletion;
-      
-    let averagePricePerHour = startingPrice;
-    if (settings.priceVariation === 'Continuous') {
-      averagePricePerHour = startingPrice + (priceStep * (h - startHour + 1));
-    } else if (settings.priceVariation === 'Hourly' && settings.hourlyPricePattern?.[h] !== undefined) {
-      averagePricePerHour = settings.hourlyPricePattern[h];
-    }
-    
-    const stepTime = new Date(date);
-    stepTime.setHours(h, 59, 59, 0); // close of the hour
-    
-    macroData.push({
-       time: stepTime,
-       volume: targetVolumePerHour,
-       maxVolume: settings.rateOfDepletion,
-       price: averagePricePerHour,
-       isProgressive: h > startHour ? averagePricePerHour > macroData[macroData.length - 1].price : true,
-       isRegressive: h > startHour ? averagePricePerHour < macroData[macroData.length - 1].price : false
-    });
-  }
-
-  return macroData;
 }
