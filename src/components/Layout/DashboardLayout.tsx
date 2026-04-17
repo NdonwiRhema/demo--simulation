@@ -18,10 +18,10 @@ export default function DashboardLayout() {
       {/* LEFT SIDEBAR */}
       <aside className="sidebar-left">
         <div className="logo cursor-pointer" onClick={() => navigate('/')}>
-          <span style={{ color: 'var(--accent-purple)', fontWeight: 800, fontSize: '1.5rem'}}>nix</span>
-          <span style={{ color: 'var(--accent-gold)', fontWeight: 800, fontSize: '1.5rem'}}>t</span>
+          <span style={{ color: 'var(--accent-purple)', fontWeight: 800, fontSize: '1.5rem' }}>mo</span>
+          <span style={{ color: 'var(--accent-gold)', fontWeight: 800, fontSize: '1.5rem' }}>Bo</span>
         </div>
-        
+
         <nav className="nav-icons">
           <button className={`icon-btn ${!isSettings ? 'active' : ''}`} onClick={() => navigate('/')}>
             <BarChart2 size={24} />
@@ -32,9 +32,9 @@ export default function DashboardLayout() {
           <button className={`icon-btn ${isSettings ? 'active' : 'disabled'}`} disabled={true /* disabled via prompt, admin only via URL */}>
             <Settings size={24} />
           </button>
-          
+
           <div className="spacer" />
-          
+
           <button className="icon-btn toggle-full" onClick={() => setFullScreen(!isFullScreen)}>
             <Maximize size={24} />
           </button>
@@ -48,13 +48,13 @@ export default function DashboardLayout() {
           <div className="spacer"></div>
           {/* User profile section matching prompt */}
           <div className="user-profile">
-             <div className="user-info">
-               <span className="user-name">James Radcliffe</span>
-               <span className="user-role">Admin</span>
-             </div>
-             <div className="avatar">
-               <User size={20} />
-             </div>
+            <div className="user-info">
+              <span className="user-name">James Radcliffe</span>
+              <span className="user-role">Admin</span>
+            </div>
+            <div className="avatar">
+              <User size={20} />
+            </div>
           </div>
         </header>
 
@@ -67,49 +67,49 @@ export default function DashboardLayout() {
           {/* RIGHT SIDEBAR (Only if not fullscreen) */}
           {!isFullScreen && (
             <aside className="sidebar-right">
-               <div className="sidebar-section">
-                  <h3 className="section-title">Active</h3>
-                  {activeCategory ? (
-                     <div className="category-card active-card">
-                       <div className="cat-icon" />
-                       <span>{activeCategory.name}</span>
-                     </div>
-                  ) : (
-                     <details><summary>No active category</summary></details>
-                  )}
-               </div>
+              <div className="sidebar-section">
+                <h3 className="section-title">Active</h3>
+                {activeCategory ? (
+                  <div className="category-card active-card">
+                    <div className="cat-icon" />
+                    <span>{activeCategory.name}</span>
+                  </div>
+                ) : (
+                  <details><summary>No active category</summary></details>
+                )}
+              </div>
 
-               <div className="sidebar-section">
-                 <details open className="accordion">
-                   <summary className="section-title">All Categories</summary>
-                   <div className="search-box">
-                     <Search size={16} />
-                     <input type="text" placeholder="Search..." />
-                   </div>
-                   
-                   <div className="categories-list">
-                     {otherCategories.length === 0 ? (
-                       <span className="no-data">No data</span>
-                     ) : (
-                       otherCategories.map(cat => (
-                         <div key={cat.id} className="category-item" onClick={() => setActiveCategory(cat.id)}>
-                            <div className="cat-icon" />
-                            <span>{cat.name}</span>
-                         </div>
-                       ))
-                     )}
-                   </div>
-                 </details>
-               </div>
+              <div className="sidebar-section">
+                <details open className="accordion">
+                  <summary className="section-title">All Categories</summary>
+                  <div className="search-box">
+                    <Search size={16} />
+                    <input type="text" placeholder="Search..." />
+                  </div>
+
+                  <div className="categories-list">
+                    {otherCategories.length === 0 ? (
+                      <span className="no-data">No data</span>
+                    ) : (
+                      otherCategories.map(cat => (
+                        <div key={cat.id} className="category-item" onClick={() => setActiveCategory(cat.id)}>
+                          <div className="cat-icon" />
+                          <span>{cat.name}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </details>
+              </div>
             </aside>
           )}
         </div>
       </div>
-{/* 
+      {/* 
 Quick layout styles injected for functionality - in a real app this is moved to CSS.
 Using index.css for bulk sizing.
 */}
-  <style>{`
+      <style>{`
     .layout-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; background: var(--bg-main); color: #fff; }
     .sidebar-left { width: var(--sidebar-w); background: var(--bg-panel); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 1px solid var(--border-light); z-index: 10; }
     .nav-icons { display: flex; flex-direction: column; gap: 30px; margin-top: 60px; flex: 1; align-items: center; }
