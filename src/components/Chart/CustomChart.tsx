@@ -192,7 +192,7 @@ export default function CustomChart({}: Props) {
         if (nextTime.getHours() >= endHour) { clearInterval(playheadTimer); return prev; }
         return nextTime;
       });
-    }, 200);
+    }, 1000);
 
     return () => clearInterval(playheadTimer);
   }, [category, simulatedTime === null, Object.keys(dataMap).length === 0, startHour]);
