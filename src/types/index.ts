@@ -5,16 +5,20 @@ export type ChartMode = 'Bar' | 'Candlestick' | 'Line';
 
 export interface CategorySettings {
   dayHours: DayHours;
-  rateOfDepletion: number; // Max volume per hour
-  startingDailyVolume: number | 'Continuous'; // 0 or Custom or Continuous
+  rateOfDepletion: number; // Max volume per hour (derived or preset)
+  dailyVolumeTarget: number; // User provided target
+  actualSellOutPercentage: number; // e.g. 85 for 85%
+  bulkVolumeBumpValue: number; // Amount to add per bump
+  bulkVolumeCount: number; // Max 10 bumps tracking
+  startingDailyVolume: number | 'Continuous'; 
   volumeVariation: VariationType;
-  hourlyVolumePattern?: Record<number, number>; // Maps hour -> volume limit. E.g. {9: 10, 10: 20}
+  hourlyVolumePattern?: Record<number, number>;
   priceVariation: VariationType;
-  hourlyPricePattern?: Record<number, number>; // Maps hour -> price
+  hourlyPricePattern?: Record<number, number>;
   startingPricePerDay?: number;
   endingPricePerDay?: number;
   vToVRelation: VToVRelation;
-  variationPattern: boolean; // On or Off
+  variationPattern: boolean;
 }
 
 export interface Category {
@@ -27,7 +31,9 @@ export interface Category {
 
 export interface ChartDataPoint {
   time: Date;
-  volume: number;     // Actual volume
+  volume: number;     // Normal actual volume
+  bulkVolume: number; // Volume from bulk bumps
+  totalVolume: number; // Normal + Bulk
   maxVolume: number;  // The target upper limit for this span
   price: number;
   isProgressive: boolean; // Is price > prev price
@@ -39,6 +45,6 @@ export interface AppState {
   activeCategoryId: string | null;
   chartMode: ChartMode;
   isFullScreen: boolean;
-  timeFrame: 'Hours' | 'Minutes' | 'Seconds';
+  timeFrame: 'Daily' | 'Hourly' | '10 Minutes';
   currency: string;
 }

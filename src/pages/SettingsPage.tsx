@@ -1,249 +1,405 @@
 import React, { useState } from 'react';
 import { useAppConfig } from '../context/AppContext';
-import { Category, DayHours, VariationType, VToVRelation } from '../types';
+import { Category } from '../types';
+import { Plus, Save, Activity, LayoutGrid, Sliders, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 
-export default function SettingsPage() {
-  const { categories, updateCategoryParams, savePreset, currency, setCurrency } = useAppConfig();
-  const [selectedCatId, setSelectedCatId] = useState(categories[0]?.id);
-  const [isApplying, setIsApplying] = useState(false);
+const SettingsPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'presets' | 'live'>('presets');
+  const { categories, activeCategoryId, setActiveCategory, updateCategoryParams, addCategory, sendBulkVolume } = useAppConfig();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const selectedCategory = categories.find(c => c.id === selectedCatId);
+  // Modal State for New Category
+  const [newCat, setNewCat] = useState({
+    name: '',
+    dailyVolumeTarget: 1000,
+    startingPrice: 10,
+    endingPrice: 20,
+    dayHours: 'Daylight' as 'Daylight' | '24H',
+    actualPercentage: 85
+  });
 
-  const [volVar, setVolVar] = React.useState(categories[0]?.settings.volumeVariation);
-  const [priceVar, setPriceVar] = React.useState(categories[0]?.settings.priceVariation);
-  const [dayType, setDayType] = React.useState(categories[0]?.settings.dayHours);
-
-  React.useEffect(() => {
-    if (selectedCategory) {
-      setVolVar(selectedCategory.settings.volumeVariation);
-      setPriceVar(selectedCategory.settings.priceVariation);
-      setDayType(selectedCategory.settings.dayHours);
-    }
-  }, [selectedCategory]);
-
-  const isDaylight = dayType === 'Daylight';
-  const startHour = isDaylight ? 9 : 0;
-  const endHour = isDaylight ? 17 : 24;
-  const hoursRange = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
-
-  const formatHour = (h: number) => {
-    const ampm = h >= 12 && h < 24 ? 'pm' : 'am';
-    const displayH = h % 12 === 0 ? 12 : h % 12;
-    return `${displayH}${ampm}`;
+  const handleAddCategory = async () => {
+    const id = `cat-${Date.now()}`;
+    const category: Category = {
+      id,
+      name: newCat.name,
+      isActive: false,
+      settings: {
+        dayHours: newCat.dayHours,
+        rateOfDepletion: 60,
+        dailyVolumeTarget: newCat.dailyVolumeTarget,
+        actualSellOutPercentage: newCat.actualPercentage,
+        bulkVolumeBumpValue: 50,
+        bulkVolumeCount: 0,
+        startingDailyVolume: 0,
+        volumeVariation: 'Continuous',
+        priceVariation: 'Continuous',
+        vToVRelation: 'Display',
+        variationPattern: true,
+        startingPricePerDay: newCat.startingPrice,
+        endingPricePerDay: newCat.endingPrice
+      }
+    };
+    await addCategory(category);
+    setIsModalOpen(false);
   };
 
-  const handleApply = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCategory || !selectedCatId) return;
+  const selectedCategory = categories.find(c => c.id === (activeTab === 'presets' ? activeCategoryId : activeCategoryId)) || categories[0];
 
-    setIsApplying(true);
-    const fd = new FormData(e.currentTarget as HTMLFormElement);
-
-    setTimeout(() => {
-      const newParams: Partial<Category['settings']> = {
-        dayHours: dayType as any,
-        rateOfDepletion: Number(fd.get('rateOfDepletion')),
-        startingDailyVolume: fd.get('startingDailyVolume') === 'Custom' ? Number(fd.get('customVolume')) : 'Continuous',
-        volumeVariation: volVar as any,
-        priceVariation: priceVar as any,
-        vToVRelation: fd.get('vToVRelation') as any,
-        variationPattern: fd.get('variationPattern') === 'on',
-      };
-
-      if (priceVar === 'Continuous') {
-        newParams.startingPricePerDay = Number(fd.get('startingPricePerDay'));
-        newParams.endingPricePerDay = Number(fd.get('endingPricePerDay'));
-      }
-
-      if (volVar === 'Hourly') {
-        const hourlyVol: Record<number, number> = {};
-        hoursRange.forEach(h => hourlyVol[h] = Number(fd.get(`vol-${h}`)));
-        newParams.hourlyVolumePattern = hourlyVol;
-      }
-
-      if (priceVar === 'Hourly') {
-        const hourlyPri: Record<number, number> = {};
-        hoursRange.forEach(h => hourlyPri[h] = Number(fd.get(`price-${h}`)));
-        newParams.hourlyPricePattern = hourlyPri;
-      }
-
-      updateCategoryParams(selectedCatId, newParams);
-      setIsApplying(false);
-    }, 800);
-  };
-
-  // In a full implementation, these would trigger context updates (e.g. updateCategoryParams).
-  // For the UI mockup required by the current scope, they read from state.
   return (
-    <div className="settings-container">
-      <div className="settings-header">
-        <h2>Admin Settings</h2>
-        <p>Configure simulation parameters per category</p>
-      </div>
-
-      <div className="settings-body">
-        <div className="cat-selector">
-          <label>Select Category</label>
-          <select
-            value={selectedCatId}
-            onChange={e => setSelectedCatId(e.target.value)}
-            className="super-select"
+    <div className="settings-page">
+      <header className="settings-header">
+        <div className="tab-navigation">
+          <button 
+            className={activeTab === 'presets' ? 'active' : ''} 
+            onClick={() => setActiveTab('presets')}
           >
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            <LayoutGrid size={18} /> Presets
+          </button>
+          <button 
+            className={activeTab === 'live' ? 'active' : ''} 
+            onClick={() => setActiveTab('live')}
+          >
+            <Activity size={18} /> Live Control
+          </button>
         </div>
+        {activeTab === 'presets' && (
+          <button className="add-cat-btn" onClick={() => setIsModalOpen(true)}>
+            <Plus size={18} /> New Category
+          </button>
+        )}
+      </header>
 
-        {selectedCategory && (
-          <form className="params-grid" onSubmit={handleApply}>
-            <div className="param-card">
-              <label>Day Hours</label>
-              <select className="super-select" name="dayHours" value={dayType} onChange={e => setDayType(e.target.value as any)}>
-                <option value="Daylight">Daylight (9am - 5pm)</option>
-                <option value="24H">24H</option>
-              </select>
-            </div>
-
-            <div className="param-card">
-              <label>Rate of Depletion (Max Vol/hr)</label>
-              <input type="number" name="rateOfDepletion" className="super-input" defaultValue={selectedCategory.settings.rateOfDepletion} />
-            </div>
-
-            <div className="param-card">
-              <label>Starting Daily Volume</label>
-              <select className="super-select" name="startingDailyVolume" defaultValue={selectedCategory.settings.startingDailyVolume === 'Continuous' ? 'Continuous' : 'Custom'}>
-                <option value="Custom">Custom (starts from X)</option>
-                <option value="Continuous">Continuous (picks up from yesterday)</option>
-              </select>
-              {selectedCategory.settings.startingDailyVolume !== 'Continuous' && (
-                <input type="number" name="customVolume" className="super-input mt-2" placeholder="Value (e.g. 0)" defaultValue={selectedCategory.settings.startingDailyVolume} />
-              )}
-            </div>
-
-            <div className="settings-section">
-              <h3 className="section-title">Global Settings</h3>
-              <div className="param-card">
-                <div className="param-header">
-                  <h4>Primary Currency</h4>
-                  <p>The standard fiat mapping used for the charts.</p>
+      <div className="settings-content">
+        {activeTab === 'presets' ? (
+          <div className="presets-tab">
+            <div className="category-grid">
+              {categories.map(cat => (
+                <div 
+                  key={cat.id} 
+                  className={`cat-settings-card ${cat.id === activeCategoryId ? 'active' : ''}`}
+                  onClick={() => setActiveCategory(cat.id)}
+                >
+                  <div className="card-header">
+                    <h3>{cat.name}</h3>
+                    {cat.id === activeCategoryId && <span className="default-badge">Default</span>}
+                  </div>
+                  <div className="card-body">
+                    <div className="setting-row">
+                      <span>Daily Target</span>
+                      <span>{cat.settings.dailyVolumeTarget}</span>
+                    </div>
+                    <div className="setting-row">
+                      <span>Actual %</span>
+                      <span>{cat.settings.actualSellOutPercentage}%</span>
+                    </div>
+                    <div className="setting-row">
+                      <span>Price Range</span>
+                      <span>{cat.settings.startingPricePerDay} - {cat.settings.endingPricePerDay}</span>
+                    </div>
+                  </div>
                 </div>
-                <select className="super-select" value={currency} onChange={e => setCurrency(e.target.value)}>
-                  <option value="INR">🇮🇳 INR</option>
-                  <option value="USD">🇺🇸 USD</option>
-                  <option value="EUR">🇪🇺 EUR</option>
-                  <option value="GBP">🇬🇧 GBP</option>
-                </select>
-              </div>
+              ))}
             </div>
-
-            <div className="settings-section">
-              <h3 className="section-title">Data Variations</h3>
-              <div className="param-card">
-                <label>Volume Variation</label>
-                <select className="super-select" value={volVar} onChange={e => setVolVar(e.target.value as any)}>
-                  <option value="Hourly">Hourly Custom Setup</option>
-                  <option value="Continuous">Continuous (Based on Rate)</option>
-                </select>
-                {volVar === 'Hourly' && (
-                  <div className="hourly-grid">
-                    {hoursRange.map(h => (
-                      <div key={`vol-${h}`} className="hr-input-row">
-                        <span>{formatHour(h)} - {formatHour(h + 1)}</span>
-                        <input type="number" name={`vol-${h}`} className="super-input min" defaultValue={selectedCategory.settings.hourlyVolumePattern?.[h] || 0} />
+          </div>
+        ) : (
+          <div className="live-control-tab">
+            <div className="live-grid">
+              {categories.map(cat => (
+                <div key={cat.id} className="live-cat-card">
+                  <div className="live-header">
+                    <h4>{cat.name}</h4>
+                    <span className="live-status">Target: {cat.settings.dailyVolumeTarget}</span>
+                  </div>
+                  
+                  <div className="control-sections">
+                    <div className="volume-control">
+                      <p>Adjust Volume (Current Frame)</p>
+                      <div className="button-group">
+                        <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget - 10 })}>
+                          <ArrowDownRight size={16} /> -10
+                        </button>
+                        <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget + 10 })}>
+                          <ArrowUpRight size={16} /> +10
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
 
-              <div className="param-card">
-                <label>Price Variation</label>
-                <select className="super-select" value={priceVar} onChange={e => setPriceVar(e.target.value as any)}>
-                  <option value="Hourly">Hourly Custom Setup</option>
-                  <option value="Continuous">Continuous (Start to End)</option>
-                </select>
-                {priceVar === 'Continuous' && (
-                  <div className="flex-row">
-                    <input type="number" name="startingPricePerDay" className="super-input min" placeholder="Start Price" defaultValue={selectedCategory.settings.startingPricePerDay} />
-                    <input type="number" name="endingPricePerDay" className="super-input min" placeholder="End Price" defaultValue={selectedCategory.settings.endingPricePerDay} />
-                  </div>
-                )}
-                {priceVar === 'Hourly' && (
-                  <div className="hourly-grid">
-                    {hoursRange.map(h => (
-                      <div key={`price-${h}`} className="hr-input-row">
-                        <span>{formatHour(h)} - {formatHour(h + 1)}</span>
-                        <input type="number" name={`price-${h}`} className="super-input min" defaultValue={selectedCategory.settings.hourlyPricePattern?.[h] || 0} />
+                    <div className="bulk-control">
+                      <p>Bulk Volume Bump</p>
+                      <div className="bulk-actions">
+                        <input 
+                          type="number" 
+                          value={cat.settings.bulkVolumeBumpValue} 
+                          onChange={(e) => updateCategoryParams(cat.id, { bulkVolumeBumpValue: Number(e.target.value) })}
+                        />
+                        <button 
+                          disabled={cat.settings.bulkVolumeCount >= 10}
+                          onClick={() => sendBulkVolume(cat.id, cat.settings.bulkVolumeBumpValue)}
+                          className="bump-btn"
+                        >
+                          <Zap size={16} /> Send Bulk ({10 - cat.settings.bulkVolumeCount} left)
+                        </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
-              </div>
-
-              <div className="param-card">
-                <label>V to V Relation (Chart Coloring)</label>
-                <select className="super-select" name="vToVRelation" defaultValue={selectedCategory.settings.vToVRelation}>
-                  <option value="None">None (Uniform Color)</option>
-                  <option value="Display">Display (Progressive/Regressive)</option>
-                </select>
-              </div>
-
-              <div className="param-card full-span">
-                <label>Variation Pattern</label>
-                <div className="flex-align">
-                  <input type="checkbox" name="variationPattern" id="vpattern" defaultChecked={selectedCategory.settings.variationPattern} className="super-check" />
-                  <label htmlFor="vpattern" className="check-label">Enable smoothed random minute-by-minute fluctuations</label>
                 </div>
-              </div>
-
-              <div className="param-card full-span action-row">
-                <button type="submit" className="super-button primary" disabled={isApplying}>
-                  {isApplying ? 'Applying Changes...' : 'Apply Parameters'}
-                </button>
-                <button type="button" className="super-button secondary" onClick={() => {
-                  savePreset();
-                  alert('Application settings saved securely to browser Local Storage!');
-                }}>Save as Preset</button>
-              </div>
+              ))}
             </div>
-          </form>
+          </div>
         )}
       </div>
 
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Add New Category</h2>
+            <div className="form-group">
+              <label>Category Name</label>
+              <input type="text" value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value})} placeholder="e.g. Retail Spaces" />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Daily Volume Target</label>
+                <input type="number" value={newCat.dailyVolumeTarget} onChange={e => setNewCat({...newCat, dailyVolumeTarget: Number(e.target.value)})} />
+              </div>
+              <div className="form-group">
+                <label>Actual % Target</label>
+                <input type="number" value={newCat.actualPercentage} onChange={e => setNewCat({...newCat, actualPercentage: Number(e.target.value)})} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Start Price</label>
+                <input type="number" value={newCat.startingPrice} onChange={e => setNewCat({...newCat, startingPrice: Number(e.target.value)})} />
+              </div>
+              <div className="form-group">
+                <label>End Price</label>
+                <input type="number" value={newCat.endingPrice} onChange={e => setNewCat({...newCat, endingPrice: Number(e.target.value)})} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Day Hours</label>
+              <select value={newCat.dayHours} onChange={e => setNewCat({...newCat, dayHours: e.target.value as any})}>
+                <option value="Daylight">Daylight (8am - 5pm)</option>
+                <option value="24H">24 Hours</option>
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button className="confirm-btn" onClick={handleAddCategory}>Create Category</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
-      .settings-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding-right: 15px;}
-      .settings-header { margin-bottom: 30px; }
-      .settings-header h2 { font-size: 1.8rem; font-weight: 500; margin-bottom: 5px; }
-      .settings-header p { color: var(--text-secondary); }
-      
-      .cat-selector { margin-bottom: 30px; max-width: 400px; }
-      
-      .params-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-      .param-card { background: var(--bg-surface); padding: 20px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.03);}
-      .param-card.full-span { grid-column: 1 / -1; }
-      .param-card label { display: block; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.85rem;}
-      
-      .super-select, .super-input { width: 100%; background: var(--bg-main); border: 1px solid var(--border-light); color: #fff; padding: 12px; border-radius: var(--radius-sm); outline: none; transition: 0.2s;}
-      .super-select:focus, .super-input:focus { border-color: var(--accent-purple); }
-      .mt-2 { margin-top: 10px; }
-      .flex-row { display: flex; gap: 10px; margin-top: 10px; }
-      .super-input.min { width: 50%; }
-      .hourly-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 200px; overflow-y: auto; padding-right: 5px;}
-      .hr-input-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px;}
-      .hr-input-row input { width: 60px; padding: 5px; text-align: center;}
-      
-      .flex-align { display: flex; align-items: center; gap: 10px; }
-      .super-check { width: 18px; height: 18px; accent-color: var(--accent-purple); cursor: pointer; }
-      .check-label { margin-bottom: 0 !important; cursor: pointer; color: #fff !important; font-size: 1rem !important;}
-      
-      .action-row { display: flex; gap: 15px; background: transparent; border: none; padding: 0;}
-      .super-button { padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem; }
-      .super-button.primary { background: var(--accent-purple); color: #fff; box-shadow: var(--shadow-glow); border: 1px solid rgba(255,255,255,0.1); }
-      .super-button.secondary { background: rgba(255,255,255,0.9); color: var(--text-muted);}
-    
-    `}</style>
+        .settings-page {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .settings-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .tab-navigation {
+          display: flex;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 4px;
+          border-radius: 12px;
+          gap: 4px;
+        }
+        .tab-navigation button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .tab-navigation button.active {
+          background: #3b82f6;
+          color: #fff;
+        }
+        .add-cat-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #10b981;
+          color: #fff;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 10px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .settings-content {
+          flex: 1;
+          overflow-y: auto;
+        }
+        .category-grid, .live-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+        }
+        .cat-settings-card, .live-cat-card {
+          background: #1a1c2c;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 20px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .cat-settings-card.active {
+          border-color: #3b82f6;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+        .card-header, .live-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .default-badge {
+          font-size: 0.7rem;
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+          padding: 2px 8px;
+          border-radius: 4px;
+        }
+        .setting-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          font-size: 0.85rem;
+          color: #94a3b8;
+        }
+        .setting-row span:last-child {
+          color: #fff;
+          font-weight: 600;
+        }
+        .control-sections {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .button-group, .bulk-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 8px;
+        }
+        .button-group button {
+          flex: 1;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #fff;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+        .bulk-actions input {
+          width: 80px;
+          background: #0d0e14;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #fff;
+          padding: 8px;
+          border-radius: 8px;
+        }
+        .bump-btn {
+          flex: 1;
+          background: #fbbf24;
+          color: #000;
+          border: none;
+          padding: 8px;
+          border-radius: 8px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .bump-btn:disabled {
+          background: #475569;
+          cursor: not-allowed;
+        }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(5px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 2000;
+        }
+        .modal-content {
+          background: #1a1c2c;
+          padding: 32px;
+          border-radius: 24px;
+          width: 100%;
+          max-width: 500px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .form-group {
+          margin-bottom: 16px;
+        }
+        .form-row {
+          display: flex;
+          gap: 16px;
+        }
+        .form-group label {
+          display: block;
+          color: #94a3b8;
+          font-size: 0.85rem;
+          margin-bottom: 8px;
+        }
+        .form-group input, .form-group select {
+          width: 100%;
+          background: #0d0e14;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #fff;
+          padding: 10px;
+          border-radius: 8px;
+          outline: none;
+        }
+        .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 24px;
+        }
+        .cancel-btn {
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+        }
+        .confirm-btn {
+          background: #3b82f6;
+          color: #fff;
+          border: none;
+          padding: 10px 24px;
+          border-radius: 10px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+      `}</style>
     </div>
-    // // .super-button.secondary { background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: not-allowed;}
   );
-}
+};
+
+export default SettingsPage;

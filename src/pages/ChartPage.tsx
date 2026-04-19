@@ -1,73 +1,149 @@
-import React, { useMemo } from 'react';
-import { useAppConfig } from '../context/AppContext';
+import React from 'react';
 import CustomChart from '../components/Chart/CustomChart';
+import { useAppConfig } from '../context/AppContext';
+import { Clock, LayoutGrid, BarChart3 } from 'lucide-react';
 
-export default function ChartPage() {
-  const { 
-    timeFrame, 
-    setTimeFrame, 
-    chartMode, 
-    setChartMode, 
-    activeCategoryId, 
-    categories 
-  } = useAppConfig();
+interface Props {
+  isPresentationMode?: boolean;
+}
 
-  const activeCategory = categories.find(c => c.id === activeCategoryId);
+const ChartPage: React.FC<Props> = ({ isPresentationMode = false }) => {
+  const { timeFrame, setTimeFrame } = useAppConfig();
+
+  React.useEffect(() => {
+    if (isPresentationMode) {
+      setTimeFrame('10 Minutes');
+    }
+  }, [isPresentationMode, setTimeFrame]);
 
   return (
-    <div className="chart-page-container">
-      <div className="chart-header">
-        <h2>Statistics <span style={{fontSize: '1rem', color: 'var(--text-secondary)'}}>- {activeCategory?.name}</span></h2>
-        
-        <div className="timeframe-toggles">
-          {(['Hours', 'Minutes', 'Seconds'] as const).map(tf => (
-            <button 
-              key={tf}
-              className={`tf-btn ${timeFrame === tf ? 'active' : ''}`}
-              onClick={() => setTimeFrame(tf)}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
+    <div className={`chart-page-container ${isPresentationMode ? 'presentation' : ''}`}>
+      {!isPresentationMode && (
+        <header className="page-header">
+          <div className="header-left">
+            <h1>Market Preview</h1>
+            <span className="live-indicator">
+              <span className="dot" /> LIVE
+            </span>
+          </div>
+          <div className="header-right">
+            <div className="timeframe-selector">
+              <button 
+                className={timeFrame === 'Daily' ? 'active' : ''} 
+                onClick={() => setTimeFrame('Daily')}
+              >
+                Daily
+              </button>
+              <button 
+                className={timeFrame === 'Hourly' ? 'active' : ''} 
+                onClick={() => setTimeFrame('Hourly')}
+              >
+                Hourly
+              </button>
+              <button 
+                className={timeFrame === '10 Minutes' ? 'active' : ''} 
+                onClick={() => setTimeFrame('10 Minutes')}
+              >
+                10m
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+      
+      <div className="chart-content">
+        <CustomChart isPresentationMode={isPresentationMode} />
       </div>
 
-      <div className="chart-wrapper">
-        <CustomChart />
-
-        {/* Floating Chart Mode Controls */}
-        <div className="floating-controls">
-           <div className="controls-panel">
-             {(['Bar', 'Candlestick', 'Line'] as const).map(mode => (
-               <button
-                 key={mode}
-                 className={`mode-btn ${chartMode === mode ? 'active' : ''}`}
-                 onClick={() => setChartMode(mode)}
-               >
-                 {mode}
-               </button>
-             ))}
-           </div>
-        </div>
-      </div>
-
-  <style>{`
-    .chart-page-container { display: flex; flex-direction: column; height: 100%; position: relative; }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .chart-header h2 { font-size: 1.5rem; font-weight: 500; }
-    .timeframe-toggles { display: flex; gap: 5px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: var(--radius-lg); }
-    .tf-btn { padding: 8px 16px; border-radius: var(--radius-lg); font-size: 0.85rem; color: var(--text-secondary); transition: 0.2s;}
-    .tf-btn:hover { color: #fff; }
-    .tf-btn.active { background: #fff; color: #000; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    
-    .chart-wrapper { flex: 1; position: relative; border-radius: var(--radius-lg); overflow: hidden; }
-    
-    .floating-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 50; }
-    .controls-panel { display: flex; gap: 5px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); padding: 8px; border-radius: var(--radius-xl); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .mode-btn { padding: 8px 20px; border-radius: var(--radius-xl); font-size: 0.85rem; color: var(--text-secondary); transition: 0.2s; }
-    .mode-btn:hover { color: #fff; }
-    .mode-btn.active { background: var(--bg-surface); color: var(--accent-purple); border: 1px solid var(--border-active); }
-  `}</style>
+      <style>{`
+        .chart-page-container {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          background: #0d0e14;
+        }
+        .chart-page-container.presentation {
+          background: #000;
+        }
+        .page-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 0 20px 0;
+        }
+        .page-header h1 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #fff;
+          margin: 0;
+        }
+        .live-indicator {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+          padding: 4px 10px;
+          border-radius: 20px;
+          margin-left: 15px;
+        }
+        .dot {
+          width: 6px;
+          height: 6px;
+          background: #10b981;
+          border-radius: 50%;
+          box-shadow: 0 0 10px #10b981;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
+        }
+        .header-left {
+          display: flex;
+          align-items: center;
+        }
+        .timeframe-selector {
+          display: flex;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 4px;
+          border-radius: 10px;
+          gap: 4px;
+        }
+        .timeframe-selector button {
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          padding: 6px 16px;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .timeframe-selector button:hover {
+          color: #fff;
+        }
+        .timeframe-selector button.active {
+          background: #3b82f6;
+          color: #fff;
+          box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        .chart-content {
+          flex: 1;
+          min-height: 0;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #111218;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+export default ChartPage;
