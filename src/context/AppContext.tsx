@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { AppState, Category, ChartMode } from '../types';
+import { AppState, Category, ChartMode, BulkEvent } from '../types';
 import { db } from '../../firebase';
 import { doc, onSnapshot, setDoc, collection, getDocs } from 'firebase/firestore';
 
@@ -11,7 +11,7 @@ interface AppContextType extends AppState {
   setActiveCategory: (id: string) => void;
   updateCategoryParams: (categoryId: string, newSettings: Partial<Category['settings']>) => Promise<void>;
   addCategory: (category: Category) => Promise<void>;
-  sendBulkVolume: (categoryId: string, amount: number) => Promise<void>;
+  sendBulkVolume: (categoryId: string, amount: number, timeframe: '10 Minutes' | 'Hourly') => Promise<void>;
 }
 
 const defaultSettings: Category['settings'] = {
@@ -53,26 +53,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Sync with Firestore
   useEffect(() => {
+    // Sync app settings (excluding categories)
     const unsub = onSnapshot(doc(db, 'app', 'state'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as any;
-        setState(s => ({ ...s, ...data }));
+        const { categories: _, ...settings } = data; // Ignore categories in state doc
+        setState(s => ({ ...s, ...settings }));
       } else {
-        // Initialize Firestore with default state
-        setDoc(doc(db, 'app', 'state'), {
-          ...defaultState,
-          categories: defaultState.categories // Simplified for now
-        });
+        const { categories: _, ...settings } = defaultState;
+        setDoc(doc(db, 'app', 'state'), settings);
       }
     });
 
-    // Also sync categories collection
+    // Sync categories collection
     const unsubCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
       const cats: Category[] = [];
-      snapshot.forEach(doc => cats.push({ id: doc.id, ...doc.data() } as Category));
-      if (cats.length > 0) {
-        setState(s => ({ ...s, categories: cats }));
-      }
+      snapshot.forEach(doc => {
+        const data = doc.data() as any;
+        // Convert Firestore timestamps back to Dates
+        if (data.settings?.bulkEvents) {
+          data.settings.bulkEvents = data.settings.bulkEvents.map((e: any) => ({
+            ...e,
+            timestamp: e.timestamp.toDate()
+          }));
+        }
+        cats.push({ id: doc.id, ...data } as Category);
+      });
+      setState(s => ({ ...s, categories: cats }));
     });
 
     return () => {
@@ -82,7 +89,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const persistState = (newState: Partial<AppState>) => {
-    setDoc(doc(db, 'app', 'state'), newState, { merge: true });
+    const { categories: _, ...data } = newState;
+    if (Object.keys(data).length > 0) {
+      setDoc(doc(db, 'app', 'state'), data, { merge: true });
+    }
   };
 
   const setChartMode = (chartMode: ChartMode) => persistState({ chartMode });
@@ -103,14 +113,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await setDoc(doc(db, 'categories', category.id), category);
   };
 
-  const sendBulkVolume = async (categoryId: string, amount: number) => {
+  const sendBulkVolume = async (categoryId: string, amount: number, timeframe: '10 Minutes' | 'Hourly' = '10 Minutes') => {
     const cat = state.categories.find(c => c.id === categoryId);
     if (cat && cat.settings.bulkVolumeCount < 10) {
+      const newEvent: BulkEvent = {
+        id: `bulk-${Date.now()}`,
+        timestamp: new Date(),
+        amount,
+        timeframe
+      };
+      
+      const updatedEvents = [...(cat.settings.bulkEvents || []), newEvent];
       await updateCategoryParams(categoryId, {
-        bulkVolumeCount: cat.settings.bulkVolumeCount + 1
-        // In a real app, we'd also store the bulk volume records in Firestore
+        bulkVolumeCount: cat.settings.bulkVolumeCount + 1,
+        bulkEvents: updatedEvents
       });
-      // Trigger a "bulk volume" event or update a live volume field
     }
   };
 

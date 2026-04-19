@@ -3,13 +3,21 @@ export type VariationType = 'Hourly' | 'Continuous';
 export type VToVRelation = 'None' | 'Display';
 export type ChartMode = 'Bar' | 'Candlestick' | 'Line';
 
+export interface BulkEvent {
+  id: string;
+  timestamp: Date;
+  amount: number;
+  timeframe: '10 Minutes' | 'Hourly';
+}
+
 export interface CategorySettings {
   dayHours: DayHours;
-  rateOfDepletion: number; // Max volume per hour (derived or preset)
-  dailyVolumeTarget: number; // User provided target
-  actualSellOutPercentage: number; // e.g. 85 for 85%
-  bulkVolumeBumpValue: number; // Amount to add per bump
-  bulkVolumeCount: number; // Max 10 bumps tracking
+  rateOfDepletion: number; 
+  dailyVolumeTarget: number; 
+  actualSellOutPercentage: number; 
+  bulkVolumeBumpValue: number; 
+  bulkVolumeCount: number; 
+  bulkEvents?: BulkEvent[]; // New field to track individual bumps
   startingDailyVolume: number | 'Continuous'; 
   volumeVariation: VariationType;
   hourlyVolumePattern?: Record<number, number>;
