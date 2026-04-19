@@ -77,6 +77,17 @@ const SettingsPage: React.FC = () => {
 
   const handleUpdateSettings = async () => {
     if (!editingSettings || !localSelectedId) return;
+
+    /* --- VALIDATION: Hourly Volume vs Sell Out Percentage --- */
+    const actualTarget = (editingSettings.dailyVolumeTarget * (editingSettings.actualSellOutPercentage || 100)) / 100;
+    const totalHourlyAssigned = Object.values(editingSettings.hourlyVolumePattern || {}).reduce((s, v) => s + v, 0);
+
+    if (editingSettings.volumeVariation === 'Hourly' && totalHourlyAssigned > actualTarget) {
+      alert(`Validation Error: Total hourly assigned volume (${totalHourlyAssigned}) exceeds the actual sell-out target (${actualTarget}). Please reduce hourly values.`);
+      return;
+    }
+    /* --- END VALIDATION --- */
+
     setIsSaving(true);
     await updateCategoryParams(localSelectedId, editingSettings);
     setTimeout(() => setIsSaving(false), 1000);
@@ -416,11 +427,30 @@ const SettingsPage: React.FC = () => {
                           onChange={(e) => updateCategoryParams(cat.id, { bulkVolumeBumpValue: Number(e.target.value) })}
                         />
                         <button 
-                          disabled={cat.settings.bulkVolumeCount >= 10}
+                          /* --- VALIDATION: Disable if Limit Reached or Target Exceeded --- */
+                          disabled={(() => {
+                            const recentCount = (cat.settings.bulkEvents || []).filter(e => {
+                              const eTs = e.timestamp;
+                              const eDate = eTs instanceof Date ? eTs : (eTs as any).toDate ? (eTs as any).toDate() : new Date(eTs as any);
+                              return eDate.getTime() > Date.now() - (10 * 60 * 1000);
+                            }).length;
+                            
+                            const totalBumps = (cat.settings.bulkEvents || []).reduce((s, e) => s + e.amount, 0);
+                            const wouldExceed = (totalBumps + cat.settings.bulkVolumeBumpValue) > cat.settings.dailyVolumeTarget;
+                            
+                            return recentCount >= 10 || wouldExceed;
+                          })()}
                           onClick={() => sendBulkVolume(cat.id, cat.settings.bulkVolumeBumpValue, bumpTimeframe)}
                           className="bump-btn"
                         >
-                          <Zap size={16} /> Send {bumpTimeframe === 'Hourly' ? '1h' : '10m'} ({10 - cat.settings.bulkVolumeCount} left)
+                          <Zap size={16} /> Send {bumpTimeframe === 'Hourly' ? '1h' : '10m'} ({(() => {
+                             const recentCount = (cat.settings.bulkEvents || []).filter(e => {
+                              const eTs = e.timestamp;
+                              const eDate = eTs instanceof Date ? eTs : (eTs as any).toDate ? (eTs as any).toDate() : new Date(eTs as any);
+                              return eDate.getTime() > Date.now() - (10 * 60 * 1000);
+                            }).length;
+                            return 10 - recentCount;
+                          })()} left)
                         </button>
                       </div>
                     </div>

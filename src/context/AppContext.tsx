@@ -115,7 +115,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const sendBulkVolume = async (categoryId: string, amount: number, timeframe: '10 Minutes' | 'Hourly' = '10 Minutes') => {
     const cat = state.categories.find(c => c.id === categoryId);
-    if (cat && cat.settings.bulkVolumeCount < 10) {
+    if (!cat) return;
+
+    const now = new Date();
+    
+    // --- VALIDATION: 10-Minute Reset Logic ---
+    // Count how many bumps have occurred in the current 10-minute window
+    const tenMinWindowStart = new Date(now.getTime() - (10 * 60 * 1000));
+    const recentBumps = (cat.settings.bulkEvents || []).filter(e => {
+      const eDate = e.timestamp instanceof Date ? e.timestamp : (e.timestamp as any).toDate ? (e.timestamp as any).toDate() : new Date(e.timestamp as any);
+      return eDate > tenMinWindowStart;
+    });
+
+    // --- VALIDATION: Daily Volume Cap ---
+    // Calculate total accumulated volume so far to prevent exceeding target
+    // (Note: This is a simplified check based on current events + target)
+    const currentEventVolume = (cat.settings.bulkEvents || []).reduce((sum, e) => sum + e.amount, 0);
+    // Ideal volume up to now (rough estimate for cap)
+    const totalWithNewBump = currentEventVolume + amount;
+    const isOverTarget = totalWithNewBump > cat.settings.dailyVolumeTarget;
+
+    if (recentBumps.length < 10 && !isOverTarget) {
       const newEvent: BulkEvent = {
         id: `bulk-${Date.now()}`,
         timestamp: new Date(),
@@ -125,9 +145,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       const updatedEvents = [...(cat.settings.bulkEvents || []), newEvent];
       await updateCategoryParams(categoryId, {
-        bulkVolumeCount: cat.settings.bulkVolumeCount + 1,
+        bulkVolumeCount: recentBumps.length + 1, // Updating count for UI display
         bulkEvents: updatedEvents
       });
+    } else {
+      if (isOverTarget) console.warn("Bump blocked: Exceeds daily volume target");
+      if (recentBumps.length >= 10) console.warn("Bump blocked: 10-minute limit reached");
     }
   };
 
