@@ -70,7 +70,7 @@ export default function DashboardLayout() {
 
           <div className="user-profile">
             <div className="user-info">
-              <span className="user-name">{user?.email?.split('@')[0].split('')[0].toUpperCase() + user?.email?.split('@')[0].split('').slice(1).join('') || 'User'}</span>
+              <span className="user-name">{user?.email?.split('@')[0].split('')[0].toUpperCase() + `${user?.email?.split('@')[0].split('').slice(1).join('')}` || 'User'}</span>
               <span className="user-role">{role?.toUpperCase()}</span>
             </div>
             <button className="logout-btn" onClick={handleLogout} title="Logout">
