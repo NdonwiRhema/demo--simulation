@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAppConfig } from '../context/AppContext';
 import { Category } from '../types';
-import { Plus, Save, Activity, LayoutGrid, Sliders, ArrowUpRight, ArrowDownRight, Zap, Check } from 'lucide-react';
+import { Plus, Save, Activity, LayoutGrid, Sliders, ArrowUpRight, ArrowDownRight, Zap, Check, Trash2, Edit3 } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'presets' | 'live'>('presets');
-  const { categories, activeCategoryId, setActiveCategory, updateCategoryParams, addCategory, sendBulkVolume } = useAppConfig();
+  const { categories, activeCategoryId, setActiveCategory, updateCategoryParams, updateCategory, deleteCategory, addCategory, sendBulkVolume } = useAppConfig();
   
   // Local state for the category being edited in the form
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
   const [editingSettings, setEditingSettings] = useState<Category['settings'] | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +41,7 @@ const SettingsPage: React.FC = () => {
       const cat = categories.find(c => c.id === localSelectedId);
       if (cat) {
         setEditingSettings(cat.settings);
+        setEditingName(cat.name);
       }
     }
   }, [localSelectedId, categories]);
@@ -89,8 +91,24 @@ const SettingsPage: React.FC = () => {
     /* --- END VALIDATION --- */
 
     setIsSaving(true);
+    // Update name if changed
+    if (currentCategory && editingName !== currentCategory.name) {
+      await updateCategory(localSelectedId, { name: editingName });
+    }
     await updateCategoryParams(localSelectedId, editingSettings);
     setTimeout(() => setIsSaving(false), 1000);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!localSelectedId) return;
+    const cat = categories.find(c => c.id === localSelectedId);
+    if (!cat) return;
+
+    if (window.confirm(`Are you sure you want to delete "${cat.name}"? This action cannot be undone.`)) {
+      await deleteCategory(localSelectedId);
+      setLocalSelectedId(null);
+      setEditingSettings(null);
+    }
   };
 
   const currentCategory = categories.find(c => c.id === localSelectedId);
@@ -152,10 +170,24 @@ const SettingsPage: React.FC = () => {
               {editingSettings ? (
                 <div className="form-container">
                   <div className="form-header">
-                    <h3>Edit {currentCategory?.name}</h3>
-                    <button className="save-btn" onClick={handleUpdateSettings} disabled={isSaving}>
-                      {isSaving ? 'Saving...' : <><Save size={18} /> Save Changes</>}
-                    </button>
+                    <div className="title-edit-group">
+                      <Edit3 size={16} className="edit-icon" />
+                      <input 
+                        type="text" 
+                        className="name-edit-input" 
+                        value={editingName} 
+                        onChange={e => setEditingName(e.target.value)}
+                        placeholder="Category Name"
+                      />
+                    </div>
+                    <div className="header-actions">
+                      <button className="delete-btn" onClick={handleDeleteCategory} title="Delete Category">
+                        <Trash2 size={18} />
+                      </button>
+                      <button className="save-btn" onClick={handleUpdateSettings} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="form-sections-grid">
@@ -672,6 +704,61 @@ const SettingsPage: React.FC = () => {
         .save-btn:disabled {
           background: #1e293b;
           color: #94a3b8;
+        }
+        
+        .header-actions {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+        }
+        
+        .delete-btn {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          padding: 10px;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .delete-btn:hover {
+          background: #ef4444;
+          color: #fff;
+        }
+
+        .title-edit-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 8px 16px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          flex: 1;
+          max-width: 400px;
+        }
+        
+        .edit-icon {
+          color: #3b82f6;
+          opacity: 0.6;
+        }
+        
+        .name-edit-input {
+          background: transparent;
+          border: none;
+          color: #fff;
+          font-size: 1.2rem;
+          font-weight: 700;
+          outline: none;
+          width: 100%;
+        }
+        
+        .name-edit-input::placeholder {
+          color: rgba(255, 255, 255, 0.2);
         }
         
         .form-sections-grid {

@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   const isAdmin = role === 'admin';
   const isSettings = location.pathname.includes('/settings');
   const isPreview = location.pathname.includes('/preview');
-  
+
   // Show sidebars only for admin in specific pages
   const showSidebars = isAdmin && (isSettings || isPreview);
 
@@ -58,9 +58,9 @@ export default function DashboardLayout() {
         <header className="top-bar">
           <div className="logo-container">
             {!showSidebars && <img src={logo} alt="Logo" style={{ width: '40px', marginRight: '10px' }} />}
-            <h2 className="brand-name">{!showSidebars ? 'High Simulation' : ''}</h2>
+            <h2 className="brand-name">{!showSidebars ? 'High ' : ''}</h2>
           </div>
-          
+
           <div className="user-profile">
             <div className="user-info">
               <span className="user-name">{user?.email?.split('@')[0] || 'User'}</span>

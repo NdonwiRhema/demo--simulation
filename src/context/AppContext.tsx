@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AppState, Category, ChartMode, BulkEvent } from '../types';
 import { db } from '../../firebase';
-import { doc, onSnapshot, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 
 interface AppContextType extends AppState {
   setChartMode: (mode: ChartMode) => void;
@@ -11,6 +11,8 @@ interface AppContextType extends AppState {
   setActiveCategory: (id: string) => void;
   updateCategoryParams: (categoryId: string, newSettings: Partial<Category['settings']>) => Promise<void>;
   addCategory: (category: Category) => Promise<void>;
+  updateCategory: (categoryId: string, updates: Partial<Category>) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
   sendBulkVolume: (categoryId: string, amount: number, timeframe: '10 Minutes' | 'Hourly') => Promise<void>;
 }
 
@@ -113,6 +115,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await setDoc(doc(db, 'categories', category.id), category);
   };
 
+  const updateCategory = async (categoryId: string, updates: Partial<Category>) => {
+    const catRef = doc(db, 'categories', categoryId);
+    await updateDoc(catRef, updates);
+  };
+
+  const deleteCategory = async (categoryId: string) => {
+    // Prevent deleting the last category if needed, or handle it in UI
+    await deleteDoc(doc(db, 'categories', categoryId));
+    
+    // If we deleted the active category, switch to another one
+    if (state.activeCategoryId === categoryId) {
+      const remainingCats = state.categories.filter(c => c.id !== categoryId);
+      if (remainingCats.length > 0) {
+        setActiveCategory(remainingCats[0].id);
+      }
+    }
+  };
+
   const sendBulkVolume = async (categoryId: string, amount: number, timeframe: '10 Minutes' | 'Hourly' = '10 Minutes') => {
     const cat = state.categories.find(c => c.id === categoryId);
     if (!cat) return;
@@ -164,6 +184,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setActiveCategory,
       updateCategoryParams,
       addCategory,
+      updateCategory,
+      deleteCategory,
       sendBulkVolume
     }}>
       {children}

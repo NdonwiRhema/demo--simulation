@@ -73,6 +73,12 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
 
   return (
     <div className="chart-wrapper" ref={containerRef}>
+      {/* Prominent Category Title */}
+      <div className="category-title-overlay">
+        <span className="category-label">MARKET SECTOR</span>
+        <h2 className="category-name">{category.name}</h2>
+      </div>
+
       {/* Zoom Controls Overlay */}
       <div className="chart-controls">
         <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 5))} title="Zoom In">
@@ -92,7 +98,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           {yTicks.map((tick, i) => (
             <g key={`y-sticky-${i}`}>
               <text x={paddingX - 10} y={getPriceY(tick) + 4} fill="#94a3b8" fontSize={10} textAnchor="end">
-                {currencySymbol}{tick.toFixed(0)}
+                {/* {currencySymbol}{tick.toFixed(0)} */}
               </text>
             </g>
           ))}
@@ -103,11 +109,11 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
         <svg width={svgPhysicalWidth} height={dimensions.height}>
           {/* Y Axis Grid Lines */}
           {yTicks.map((tick, i) => (
-            <line 
-              key={`grid-${i}`} 
-              x1={0} y1={getPriceY(tick)} 
-              x2={svgPhysicalWidth} y2={getPriceY(tick)} 
-              stroke="rgba(255,255,255,0.05)" 
+            <line
+              key={`grid-${i}`}
+              x1={0} y1={getPriceY(tick)}
+              x2={svgPhysicalWidth} y2={getPriceY(tick)}
+              stroke="rgba(255,255,255,0.05)"
             />
           ))}
 
@@ -128,7 +134,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
             const now = new Date();
             const pointTime = d.time.getTime();
             const tenMin = 10 * 60 * 1000;
-            
+
             const isPast = pointTime + tenMin <= now.getTime();
             const isCurrent = pointTime <= now.getTime() && pointTime + tenMin > now.getTime();
             const isFuture = pointTime > now.getTime();
@@ -158,7 +164,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
               <g key={`bar-${i}`} opacity={isFuture ? 0.3 : 1}>
                 <defs>
                   <linearGradient id="bulkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="0%" stopColor="#9c2c04ff" />
                     <stop offset="100%" stopColor="#10b981" />
                   </linearGradient>
                 </defs>
@@ -200,23 +206,23 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
             const y = getPriceY(currentPoint.price);
             return (
               <g className="live-price-line-group">
-                <line 
-                  x1={0} y1={y} 
-                  x2={svgPhysicalWidth} y2={y} 
-                  stroke="#fbbf24" 
-                  strokeWidth={1} 
+                <line
+                  x1={0} y1={y}
+                  x2={svgPhysicalWidth} y2={y}
+                  stroke="#fbbf24"
+                  strokeWidth={1}
                   strokeDasharray="4 4"
                   className="flicker-line"
                 />
-                <rect 
-                  x={svgPhysicalWidth - 55} y={y - 10} 
-                  width={55} height={20} 
-                  fill="#fbbf24" 
-                  rx={4} 
+                <rect
+                  x={svgPhysicalWidth - 55} y={y - 10}
+                  width={55} height={20}
+                  fill="#fbbf24"
+                  rx={4}
                   opacity={0.9}
                 />
-                <text 
-                  x={svgPhysicalWidth - 50} y={y + 4} 
+                <text
+                  x={svgPhysicalWidth - 50} y={y + 4}
                   fill="#000" fontSize={10} fontWeight="700"
                 >
                   {currencySymbol}{currentPoint.price.toFixed(2)}
@@ -246,10 +252,10 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
             const pHeight = 180;
             let leftPos = x;
             const rightBoundary = window.innerWidth - 250;
-            
+
             if (leftPos - pWidth / 2 < 70) leftPos = pWidth / 2 + 70;
             if (leftPos + pWidth / 2 > rightBoundary) leftPos = rightBoundary - pWidth / 2;
-            
+
             let topPos = y - pHeight - 10;
             if (topPos < 80) topPos = y + 20;
 
@@ -265,21 +271,21 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           </div>
           <div className="popover-content">
             <div className="stat">
-              <span>Normal Volume</span>
-              <span>{displayData[clickedIndex].volume.toFixed(2)}</span>
+              <span>Regular</span>
+              <span>{Math.round(displayData[clickedIndex].volume)}</span>
             </div>
             <div className="stat">
-              <span>Bulk Volume</span>
-              <span className="bulk-text">{displayData[clickedIndex].bulkVolume.toFixed(2)}</span>
+              <span style={{ fontWeight: "bolder" }}>Bulk </span>
+              <span className="bulk-text">{Math.round(displayData[clickedIndex].bulkVolume)}</span>
             </div>
-            <div className="stat total">
+            {/* <div className="stat total">
               <span>Total Volume</span>
               <span>{displayData[clickedIndex].totalVolume.toFixed(2)}</span>
             </div>
             <div className="stat price">
               <span>Current Price</span>
               <span>{currencySymbol}{displayData[clickedIndex].price.toFixed(2)}</span>
-            </div>
+            </div> */}
           </div>
         </div>
       )}
@@ -293,18 +299,49 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           overflow: hidden;
           display: flex;
         }
+        .category-title-overlay {
+          position: absolute;
+          top: 55px;
+          left: 90px;
+          z-index: 5;
+          pointer-events: none;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .category-label {
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: #3b82f6;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          opacity: 0.8;
+        }
+        .category-name {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          line-height: 1;
+          background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+          font-family: 'Outfit', sans-serif;
+        }
         .chart-controls {
           position: absolute;
           top: 20px;
-          left: 80px;
+          right: 300px;
           display: flex;
           gap: 8px;
           z-index: 100;
-          background: rgba(30, 41, 59, 0.7);
+          background: rgba(30, 41, 59, 0.5);
           backdrop-filter: blur(8px);
           padding: 6px;
-          border-radius: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         .chart-controls button {
           background: transparent;
@@ -324,6 +361,21 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
         }
         .flicker-line {
           transition: y 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.5));
+          animation: priceFlicker 1s infinite alternate;
+        }
+        @keyframes priceFlicker {
+          0% { opacity: 0.8; stroke-width: 1; }
+          100% { opacity: 1; stroke-width: 1.5; }
+        }
+        .active-bar-anim {
+          animation: barPulse 2s infinite ease-in-out;
+          filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+        }
+        @keyframes barPulse {
+          0% { opacity: 0.8; filter: brightness(1); }
+          50% { opacity: 1; filter: brightness(1.3) drop-shadow(0 0 12px rgba(59, 130, 246, 0.7)); }
+          100% { opacity: 0.8; filter: brightness(1); }
         }
         .live-price-line-group {
           z-index: 50;
@@ -378,7 +430,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           display: flex;
           justify-content: space-between;
           margin-bottom: 8px;
-          font-size: 0.8rem;
+          font-size: 1.5rem;
           color: #94a3b8;
         }
         .stat.total {
@@ -392,7 +444,8 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           font-weight: 600;
         }
         .bulk-text {
-          color: #fbbf24;
+          color: #9c2c04ff;
+          font-weight: 600;
         }
         .no-chart {
           display: flex;

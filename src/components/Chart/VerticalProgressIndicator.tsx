@@ -114,7 +114,7 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
       <style>{`
         .vertical-indicator-wrapper {
           position: fixed;
-          right: 20px;
+          right: 100px;
           top: 50%;
           transform: translateY(-50%);
           height: 80vh;
@@ -126,7 +126,7 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
         }
         
         .main-progress-bar {
-          width: 10px; /* Optimized width */
+          width: 40px; /* Optimized width */
           height: 100%; /* 100% of parent height */
           background: #334155; /* Solid Gray background */
           border-radius: 8px;
@@ -161,8 +161,8 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
           position: absolute;
           left: 0;
           width: 100%;
-          background: #fbbf24;
-          box-shadow: 0 0 12px rgba(251, 191, 36, 0.9);
+          background: #9c2c04ff;
+          box-shadow: 0 0 12px #9c2c04ff;
           z-index: 21;
         }
 
