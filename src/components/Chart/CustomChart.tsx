@@ -73,168 +73,172 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
 
   return (
     <div className="chart-wrapper" ref={containerRef}>
+      <div className="chart-main-section">
+        {/* Zoom Controls Overlay */}
+        <div className="chart-controls">
+          <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 5))} title="Zoom In">
+            <ZoomIn size={18} />
+          </button>
+          <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 0.5))} title="Zoom Out">
+            <ZoomOut size={18} />
+          </button>
+          <button onClick={() => setZoomLevel(1)} title="Reset Zoom">
+            <Maximize2 size={18} />
+          </button>
+        </div>
 
+        <div className="chart-area-inner">
+          {/* Sticky Y-Axis */}
+          <div className="sticky-y-axis" style={{ height: dimensions.height }}>
+            <svg width={paddingX} height={dimensions.height}>
+              {yTicks.map((tick, i) => (
+                <g key={`y-sticky-${i}`}>
+                  <text x={paddingX - 10} y={getPriceY(tick) + 4} fill="#94a3b8" fontSize={10} textAnchor="end">
+                    {/* {currencySymbol}{tick.toFixed(0)} */}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
 
-      {/* Zoom Controls Overlay */}
-      <div className="chart-controls">
-        <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 5))} title="Zoom In">
-          <ZoomIn size={18} />
-        </button>
-        <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 0.5))} title="Zoom Out">
-          <ZoomOut size={18} />
-        </button>
-        <button onClick={() => setZoomLevel(1)} title="Reset Zoom">
-          <Maximize2 size={18} />
-        </button>
-      </div>
-
-      {/* Sticky Y-Axis */}
-      <div className="sticky-y-axis" style={{ height: dimensions.height }}>
-        <svg width={paddingX} height={dimensions.height}>
-          {yTicks.map((tick, i) => (
-            <g key={`y-sticky-${i}`}>
-              <text x={paddingX - 10} y={getPriceY(tick) + 4} fill="#94a3b8" fontSize={10} textAnchor="end">
-                {/* {currencySymbol}{tick.toFixed(0)} */}
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="chart-scroll-container">
-        <svg width={svgPhysicalWidth} height={dimensions.height}>
-          {/* Y Axis Grid Lines */}
-          {yTicks.map((tick, i) => (
-            <line
-              key={`grid-${i}`}
-              x1={0} y1={getPriceY(tick)}
-              x2={svgPhysicalWidth} y2={getPriceY(tick)}
-              stroke="rgba(255,255,255,0.05)"
-            />
-          ))}
-
-          {/* X Axis Labels */}
-          {displayData.map((d, i) => {
-            if (timeFrame === '10 Minutes' && i % 6 !== 0) return null;
-            const x = getX(i);
-            const label = timeFrame === 'Daily' ? d.time.toLocaleDateString() : d.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return (
-              <g key={`x-${i}`}>
-                <text x={x} y={dimensions.height - 20} fill="#94a3b8" fontSize={10} textAnchor="middle">{label}</text>
-              </g>
-            );
-          })}
-
-          {/* Bars */}
-          {displayData.map((d, i) => {
-            const now = new Date();
-            const pointTime = d.time.getTime();
-            const tenMin = 10 * 60 * 1000;
-
-            const isPast = pointTime + tenMin <= now.getTime();
-            const isCurrent = pointTime <= now.getTime() && pointTime + tenMin > now.getTime();
-            const isFuture = pointTime > now.getTime();
-
-            if (isPresentationMode && isFuture) return null;
-
-            const x = getX(i);
-            const yPrice = getPriceY(d.price);
-            const barWidth = actualPointWidth * 0.7;
-            const barHeight = chartH - (yPrice - paddingY);
-
-            const hasBulk = d.bulkVolume > 0;
-            let fill = '#3b82f6';
-
-            if (hasBulk) {
-              fill = 'url(#bulkGradient)';
-            } else if (category?.settings.vToVRelation === 'Display') {
-              fill = d.isProgressive ? '#10b981' : '#ef4444';
-            }
-
-            let barClass = '';
-            if (isCurrent) barClass = 'active-bar-anim';
-            else if (isPast) barClass = 'static-bar';
-            else if (!isPresentationMode && isFuture) barClass = 'future-preview-bar';
-
-            return (
-              <g key={`bar-${i}`} opacity={isFuture ? 0.3 : 1}>
-                <defs>
-                  <linearGradient id="bulkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#9c2c04ff" />
-                    <stop offset="100%" stopColor="#10b981" />
-                  </linearGradient>
-                </defs>
-                <rect
-                  x={x - barWidth / 2}
-                  y={paddingY + chartH - barHeight}
-                  width={barWidth}
-                  height={barHeight}
-                  fill={fill}
-                  rx={4}
-                  className={barClass}
-                />
-                <rect
-                  x={x - actualPointWidth / 2}
-                  y={paddingY}
-                  width={actualPointWidth}
-                  height={chartH}
-                  fill="transparent"
-                  onMouseEnter={() => setHoveredIndex(i)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                  onClick={() => setClickedIndex(i)}
-                  style={{ cursor: 'pointer' }}
-                />
-              </g>
-            );
-          })}
-
-          {/* Live Price Line (Horizontal) */}
-          {(() => {
-            const currentPoint = displayData.find(d => {
-              const now = new Date();
-              const pTime = d.time.getTime();
-              const tenMin = 10 * 60 * 1000;
-              return pTime <= now.getTime() && pTime + tenMin > now.getTime();
-            });
-
-            if (!currentPoint) return null;
-
-            const y = getPriceY(currentPoint.price);
-            return (
-              <g className="live-price-line-group">
+          <div className="chart-scroll-container">
+            <svg width={svgPhysicalWidth} height={dimensions.height}>
+              {/* Y Axis Grid Lines */}
+              {yTicks.map((tick, i) => (
                 <line
-                  x1={0} y1={y}
-                  x2={svgPhysicalWidth} y2={y}
-                  stroke="#fbbf24"
-                  strokeWidth={1}
-                  strokeDasharray="4 4"
-                  className="flicker-line"
+                  key={`grid-${i}`}
+                  x1={0} y1={getPriceY(tick)}
+                  x2={svgPhysicalWidth} y2={getPriceY(tick)}
+                  stroke="rgba(255,255,255,0.05)"
                 />
-                <rect
-                  x={svgPhysicalWidth - 55} y={y - 10}
-                  width={55} height={20}
-                  fill="#fbbf24"
-                  rx={4}
-                  opacity={0.9}
-                />
-                <text
-                  x={svgPhysicalWidth - 50} y={y + 4}
-                  fill="#000" fontSize={10} fontWeight="700"
-                >
-                  {currencySymbol}{currentPoint.price.toFixed(2)}
-                </text>
-              </g>
-            );
-          })()}
-        </svg>
+              ))}
+
+              {/* X Axis Labels */}
+              {displayData.map((d, i) => {
+                if (timeFrame === '10 Minutes' && i % 6 !== 0) return null;
+                const x = getX(i);
+                const label = timeFrame === 'Daily' ? d.time.toLocaleDateString() : d.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <g key={`x-${i}`}>
+                    <text x={x} y={dimensions.height - 20} fill="#94a3b8" fontSize={10} textAnchor="middle">{label}</text>
+                  </g>
+                );
+              })}
+
+              {/* Bars */}
+              {displayData.map((d, i) => {
+                const now = new Date();
+                const pointTime = d.time.getTime();
+                const tenMin = 10 * 60 * 1000;
+
+                const isPast = pointTime + tenMin <= now.getTime();
+                const isCurrent = pointTime <= now.getTime() && pointTime + tenMin > now.getTime();
+                const isFuture = pointTime > now.getTime();
+
+                if (isPresentationMode && isFuture) return null;
+
+                const x = getX(i);
+                const yPrice = getPriceY(d.price);
+                const barWidth = actualPointWidth * 0.7;
+                const barHeight = chartH - (yPrice - paddingY);
+
+                const hasBulk = d.bulkVolume > 0;
+                let fill = '#3b82f6';
+
+                if (hasBulk) {
+                  fill = 'url(#bulkGradient)';
+                } else if (category?.settings.vToVRelation === 'Display') {
+                  fill = d.isProgressive ? '#10b981' : '#ef4444';
+                }
+
+                let barClass = '';
+                if (isCurrent) barClass = 'active-bar-anim';
+                else if (isPast) barClass = 'static-bar';
+                else if (!isPresentationMode && isFuture) barClass = 'future-preview-bar';
+
+                return (
+                  <g key={`bar-${i}`} opacity={isFuture ? 0.3 : 1}>
+                    <defs>
+                      <linearGradient id="bulkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#9c2c04ff" />
+                        <stop offset="100%" stopColor="#10b981" />
+                      </linearGradient>
+                    </defs>
+                    <rect
+                      x={x - barWidth / 2}
+                      y={paddingY + chartH - barHeight}
+                      width={barWidth}
+                      height={barHeight}
+                      fill={fill}
+                      rx={4}
+                      className={barClass}
+                    />
+                    <rect
+                      x={x - actualPointWidth / 2}
+                      y={paddingY}
+                      width={actualPointWidth}
+                      height={chartH}
+                      fill="transparent"
+                      onMouseEnter={() => setHoveredIndex(i)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      onClick={() => setClickedIndex(i)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </g>
+                );
+              })}
+
+              {/* Live Price Line (Horizontal) */}
+              {(() => {
+                const currentPoint = displayData.find(d => {
+                  const now = new Date();
+                  const pTime = d.time.getTime();
+                  const tenMin = 10 * 60 * 1000;
+                  return pTime <= now.getTime() && pTime + tenMin > now.getTime();
+                });
+
+                if (!currentPoint) return null;
+
+                const y = getPriceY(currentPoint.price);
+                return (
+                  <g className="live-price-line-group">
+                    <line
+                      x1={0} y1={y}
+                      x2={svgPhysicalWidth} y2={y}
+                      stroke="#d31612ff"
+                      strokeWidth={1}
+
+                      className="flicker-line"
+                    />
+                    <rect
+                      x={svgPhysicalWidth - 55} y={y - 10}
+                      width={55} height={20}
+                      fill="#fbbf24"
+                      rx={4}
+                      opacity={0.9}
+                    />
+                    <text
+                      x={svgPhysicalWidth - 50} y={y + 4}
+                      fill="#000" fontSize={10} fontWeight="700"
+                    >
+                      {Math.round(currentPoint.price)}
+                    </text>
+                  </g>
+                );
+              })()}
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <VerticalProgressIndicator
-        data={displayData}
-        dailyTarget={category.settings.dailyVolumeTarget}
-        settings={category.settings}
-        onPointClick={handlePointClick}
-      />
+      <div className="chart-indicator-section">
+        <VerticalProgressIndicator
+          data={displayData}
+          dailyTarget={category.settings.dailyVolumeTarget}
+          settings={category.settings}
+          onPointClick={handlePointClick}
+        />
+      </div>
 
       {clickedIndex !== null && displayData[clickedIndex] && (
         <div
@@ -268,7 +272,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           <div className="popover-content">
             <div className="stat">
               <span>Regular</span>
-              <span>{Math.round(displayData[clickedIndex].volume)}</span>
+              <span>{Math.round(displayData[clickedIndex].price)}</span>
             </div>
             <div className="stat">
               <span style={{ fontWeight: "bolder" }}>Bulk </span>
@@ -296,10 +300,28 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           display: flex;
         }
 
+        .chart-main-section {
+          width: 80%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .chart-area-inner {
+          flex: 1;
+          display: flex;
+          overflow: hidden;
+        }
+        .chart-indicator-section {
+          width: 20%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.2);
+        }
         .chart-controls {
           position: absolute;
           top: 20px;
-          right: 300px;
+          right: 20px;
           display: flex;
           gap: 8px;
           z-index: 100;

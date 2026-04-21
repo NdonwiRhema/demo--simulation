@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { AppState, Category, ChartMode, BulkEvent } from '../types';
 import { db } from '../../firebase';
 import { doc, onSnapshot, setDoc, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -90,18 +90,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
-  const persistState = (newState: Partial<AppState>) => {
+  const persistState = useCallback((newState: Partial<AppState>) => {
     const { categories: _, ...data } = newState;
     if (Object.keys(data).length > 0) {
       setDoc(doc(db, 'app', 'state'), data, { merge: true });
     }
-  };
+  }, []);
 
-  const setChartMode = (chartMode: ChartMode) => persistState({ chartMode });
-  const setFullScreen = (isFullScreen: boolean) => persistState({ isFullScreen });
-  const setTimeFrame = (timeFrame: AppState['timeFrame']) => persistState({ timeFrame });
-  const setCurrency = (currency: string) => persistState({ currency });
-  const setActiveCategory = (activeCategoryId: string) => persistState({ activeCategoryId });
+  const setChartMode = useCallback((chartMode: ChartMode) => persistState({ chartMode }), [persistState]);
+  const setFullScreen = useCallback((isFullScreen: boolean) => persistState({ isFullScreen }), [persistState]);
+  const setTimeFrame = useCallback((timeFrame: AppState['timeFrame']) => persistState({ timeFrame }), [persistState]);
+  const setCurrency = useCallback((currency: string) => persistState({ currency }), [persistState]);
+  const setActiveCategory = useCallback((activeCategoryId: string) => persistState({ activeCategoryId }), [persistState]);
 
   const updateCategoryParams = async (categoryId: string, newSettings: Partial<Category['settings']>) => {
     const catRef = doc(db, 'categories', categoryId);

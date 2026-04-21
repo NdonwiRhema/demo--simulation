@@ -58,7 +58,7 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
   return (
     <div className="vertical-indicator-wrapper">
       {/* Secondary UI (Stacked Bars) */}
-      <div className={`stacked-bars-container ${isVisible ? 'visible' : ''}`}>
+      {/* <div className={`stacked-bars-container ${isVisible ? 'visible' : ''}`}>
         {data.map((point, index) => {
           const widthPercent = (point.totalVolume / dailyTarget) * 100 * 10; // Scaled for visibility
           return (
@@ -79,7 +79,7 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
             />
           );
         })}
-      </div>
+      </div> */}
 
       {/* Main Bar */}
       <div
@@ -113,21 +113,23 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
 
       <style>{`
         .vertical-indicator-wrapper {
-          position: fixed;
-          right: 100px;
-          top: 50%;
-          transform: translateY(-50%);
-          height: 80vh;
-          width: 200px;
+          position: relative;
+          height: 100%;
+          width: 100%;
           display: flex;
+          flex-direction: row;
           align-items: center;
-          justify-content: flex-end;
-          z-index: 100;
+          justify-content: center;
+          gap: 30px;
+          z-index: 10;
+          padding: 40px 20px;
+          background: rgba(255, 255, 255, 0.01);
+          border-left: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .main-progress-bar {
-          width: 40px; /* Optimized width */
-          height: 100%; /* 100% of parent height */
+          width: 80px; /* Optimized width */
+          height: 80%; /* 100% of parent height */
           background: #334155; /* Solid Gray background */
           border-radius: 8px;
           overflow: hidden;
@@ -179,10 +181,9 @@ const VerticalProgressIndicator: React.FC<VerticalProgressIndicatorProps> = ({ d
         }
 
         .stacked-bars-container {
-          position: absolute;
-          right: 30px;
+          position: relative;
           height: 100%;
-          width: 160px;
+          width: 120px;
           display: flex;
           flex-direction: column-reverse;
           gap: 2px; /* Denser */

@@ -14,7 +14,8 @@ const ChartPage: React.FC<Props> = ({ isPresentationMode = false }) => {
     if (isPresentationMode) {
       setTimeFrame('10 Minutes');
     }
-  }, [isPresentationMode, setTimeFrame]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPresentationMode]);
 
   return (
     <div className={`chart-page-container ${isPresentationMode ? 'presentation' : ''}`}>

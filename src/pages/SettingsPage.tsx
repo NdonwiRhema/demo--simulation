@@ -429,14 +429,22 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="control-sections">
                     <div className="volume-control">
-                      <p>Adjust Volume (Current Frame)</p>
-                      <div className="button-group">
-                        <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget - 10 })}>
-                          <ArrowDownRight size={16} /> -10
-                        </button>
-                        <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget + 10 })}>
-                          <ArrowUpRight size={16} /> +10
-                        </button>
+                      <p>Daily Target Volume</p>
+                      <div className="volume-input-group">
+                        <input 
+                          type="number" 
+                          className="direct-volume-input"
+                          value={cat.settings.dailyVolumeTarget} 
+                          onChange={(e) => updateCategoryParams(cat.id, { dailyVolumeTarget: Number(e.target.value) })}
+                        />
+                        <div className="step-buttons">
+                          <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget - 10 })}>
+                            <ArrowDownRight size={14} /> -10
+                          </button>
+                          <button onClick={() => updateCategoryParams(cat.id, { dailyVolumeTarget: cat.settings.dailyVolumeTarget + 10 })}>
+                            <ArrowUpRight size={14} /> +10
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -897,6 +905,52 @@ const SettingsPage: React.FC = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
+        }
+        .volume-input-group {
+          display: flex;
+          gap: 10px;
+          margin-top: 8px;
+        }
+        .direct-volume-input {
+          width: 100px;
+          background: #0d0e14;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #3b82f6;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 1rem;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .direct-volume-input:focus {
+          border-color: #3b82f6;
+        }
+        .step-buttons {
+          flex: 1;
+          display: flex;
+          gap: 6px;
+        }
+        .step-buttons button {
+          flex: 1;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94a3b8;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition: all 0.2s;
+        }
+        .step-buttons button:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
+          border-color: rgba(255, 255, 255, 0.2);
         }
         .timeframe-select {
           background: #0d0e14;
