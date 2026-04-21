@@ -58,12 +58,19 @@ export default function DashboardLayout() {
         <header className="top-bar">
           <div className="logo-container">
             {!showSidebars && <img src={logo} alt="Logo" style={{ width: '40px', marginRight: '10px' }} />}
-            <h2 className="brand-name">{!showSidebars ? 'High ' : ''}</h2>
+            <h2 className="brand-name">{!showSidebars ? 'HIGH' : ''}</h2>
           </div>
+
+          {activeCategory && (
+            <div className="category-title-center">
+              {/* <span className="category-label">MARKET SECTOR</span> */}
+              <h2 className="category-name">{activeCategory.name}</h2>
+            </div>
+          )}
 
           <div className="user-profile">
             <div className="user-info">
-              <span className="user-name">{user?.email?.split('@')[0] || 'User'}</span>
+              <span className="user-name">{user?.email?.split('@')[0].split('')[0].toUpperCase() + user?.email?.split('@')[0].split('').slice(1).join('') || 'User'}</span>
               <span className="user-role">{role?.toUpperCase()}</span>
             </div>
             <button className="logout-btn" onClick={handleLogout} title="Logout">
@@ -186,6 +193,7 @@ export default function DashboardLayout() {
           align-items: center; 
           padding: 0 40px; 
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          position: relative;
         }
         .logo-container {
           display: flex;
@@ -197,6 +205,38 @@ export default function DashboardLayout() {
           background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
+        }
+        .category-title-center {
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          pointer-events: none;
+        }
+        .category-label {
+          font-size: 0.6rem;
+          font-weight: 700;
+          color: #3b82f6;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          opacity: 0.8;
+          line-height: 1;
+        }
+        .category-name {
+          margin: 0;
+          font-size: 1.4rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          line-height: 1;
+          background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+          font-family: 'Outfit', sans-serif;
+          text-transform: uppercase;
         }
         .user-profile { 
           display: flex; 

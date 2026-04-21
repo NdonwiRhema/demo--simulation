@@ -73,11 +73,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
 
   return (
     <div className="chart-wrapper" ref={containerRef}>
-      {/* Prominent Category Title */}
-      <div className="category-title-overlay">
-        <span className="category-label">MARKET SECTOR</span>
-        <h2 className="category-name">{category.name}</h2>
-      </div>
+
 
       {/* Zoom Controls Overlay */}
       <div className="chart-controls">
@@ -299,36 +295,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           overflow: hidden;
           display: flex;
         }
-        .category-title-overlay {
-          position: absolute;
-          top: 55px;
-          left: 90px;
-          z-index: 5;
-          pointer-events: none;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .category-label {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: #3b82f6;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          opacity: 0.8;
-        }
-        .category-name {
-          margin: 0;
-          font-size: 1.5rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          line-height: 1;
-          background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-          font-family: 'Outfit', sans-serif;
-        }
+
         .chart-controls {
           position: absolute;
           top: 20px;
