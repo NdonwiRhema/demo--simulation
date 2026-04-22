@@ -103,6 +103,12 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
 
           <div className="chart-scroll-container">
             <svg width={svgPhysicalWidth} height={dimensions.height}>
+              <defs>
+                <linearGradient id="bulkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#9c2c04ff" />
+                  <stop offset="100%" stopColor="#10b981" />
+                </linearGradient>
+              </defs>
               {/* Y Axis Grid Lines */}
               {yTicks.map((tick, i) => (
                 <line
@@ -158,12 +164,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
 
                 return (
                   <g key={`bar-${i}`} opacity={isFuture ? 0.3 : 1}>
-                    <defs>
-                      <linearGradient id="bulkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#9c2c04ff" />
-                        <stop offset="100%" stopColor="#10b981" />
-                      </linearGradient>
-                    </defs>
+
                     <rect
                       x={x - barWidth / 2}
                       y={paddingY + chartH - barHeight}
@@ -327,6 +328,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           z-index: 100;
           background: rgba(30, 41, 59, 0.5);
           backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           padding: 6px;
           border-radius: 12px;
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -387,6 +389,7 @@ export default function CustomChart({ isPresentationMode = false }: Props) {
           position: fixed;
           background: rgba(30, 41, 59, 0.95);
           backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           padding: 16px;

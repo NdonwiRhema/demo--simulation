@@ -142,6 +142,7 @@ export default function DashboardLayout() {
           z-index: 100;
           background: rgba(13, 14, 20, 0.8);
           backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           padding: 0 20px;
         }
         .full-presentation .content-area {
